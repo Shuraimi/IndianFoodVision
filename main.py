@@ -109,7 +109,7 @@ model,transforms=create_mobile_net_v3(class_names)
 # load the model weights
 model.load_state_dict(torch.load('MobileNetV3_100_data_15_epochs_test_acc88_with_unfreezing_3_layers.pth',map_location=torch.device('cpu')))
 
-@app.post('/predict')
+@app.api_route('/predict', methods=['POST'])
 async def predict(file:UploadFile=File(...)):
     #start time
     start_time=time.time()
