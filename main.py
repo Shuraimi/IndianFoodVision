@@ -107,41 +107,51 @@ class_names=['aloo gobi',
 model,transforms=create_mobile_net_v3(class_names)
 
 # load the model weights
-model.load_state_dict(torch.load('MobileNetV3_100_data_15_epochs_test_acc88_with_unfreezing_3_layers.pth',map_location=torch.device('cpu')))
+try:
+    model.load_state_dict(torch.load('MobileNetV3_100_data_15_epochs_test_acc88_with_unfreezing_3_layers.pth', map_location=torch.device('cpu')))
+    print("✓ Model loaded successfully")
+except FileNotFoundError:
+    print("⚠️ Warning: Model file not found. Running with untrained weights.")
+except Exception as e:
+    print(f"⚠️ Error loading model: {e}")
 
-@app.api_route('/predict', methods=['POST'])
+@app.post('/predict')
 async def predict(file:UploadFile=File(...)):
-    #start time
-    start_time=time.time()
-    # set model to eval mode
-    model.eval()
-    
-    with torch.inference_mode():
+    try:
+        #start time
+        start_time=time.time()
+        # set model to eval mode
+        model.eval()
         
-        # read and preprocess image
-        contents=await file.read()
-        image=Image.open(io.BytesIO(contents)).convert('RGB')
-        
-        # preprocess image
-        processsed_image=transforms(image).unsqueeze(0)
-        
-        # make prediction
-        predictions=model(processsed_image)
-        
-        # get top 5 predictions
-        probs=torch.nn.functional.softmax(predictions, dim=1)
-        top5_probs, top5_indices=torch.topk(probs, k=5)
-        top5_probs=top5_probs.squeeze().tolist()
-        top5_indices=top5_indices.squeeze().tolist()
-        top5_class_names=[class_names[idx] for idx in top5_indices] 
-        # end time
-        end_time=time.time()    
-        
-        # return predictions and processing time
-        return {
-            "predictions": list(zip(top5_class_names, top5_probs)),
-            "processing_time": end_time - start_time
-        }
+        with torch.inference_mode():
+            
+            # read and preprocess image
+            contents=await file.read()
+            image=Image.open(io.BytesIO(contents)).convert('RGB')
+            
+            # preprocess image
+            processsed_image=transforms(image).unsqueeze(0)
+            
+            # make prediction
+            predictions=model(processsed_image)
+            
+            # get top 5 predictions
+            probs=torch.nn.functional.softmax(predictions, dim=1)
+            top5_probs, top5_indices=torch.topk(probs, k=5)
+            top5_probs=top5_probs.squeeze().tolist()
+            top5_indices=top5_indices.squeeze().tolist()
+            top5_class_names=[class_names[idx] for idx in top5_indices] 
+            # end time
+            end_time=time.time()    
+            
+            # return predictions and processing time
+            return {
+                "predictions": list(zip(top5_class_names, top5_probs)),
+                "processing_time": end_time - start_time
+            }
+    except Exception as e:
+        print(f"Error in prediction: {e}")
+        return {"error": str(e)}
         
 @app.get('/')
 async def root():
