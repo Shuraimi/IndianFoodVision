@@ -15,7 +15,11 @@ app=FastAPI()
 # specifying origins allowed to communicate with backend if needed can be specified in list
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
+    allow_origins=[
+        "https://indianfoodvision.netlify.app",
+        "http://localhost:3000",  # optional for local dev
+        "http://localhost:5173"
+    ],
     allow_credentials=True, # allow cookies
     allow_methods=['*'], # allow all HTTP methods(GET,Post, etc) for cross origin requests
     allow_headers=['*'], # allows all headers
